@@ -1,0 +1,546 @@
+<title>Polish in LLMs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (max 1080px) of numbered evidence sections; each section = claim, interactive figure, source line. */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --ink:#16202c; --muted:#5a6676; --line:#dde2e8;
+  --en:#3f6f9f; --pl:#b8323c; --accent:#b8323c; --soft:#eef1f5;
+  --c-com:#3f6f9f; --c-open:#8a94a3; --c-pl:#b8323c;
+  --good:#2f7d5b; --warn:#a86a12;
+  --f-display:"Instrument Serif", Georgia, "Times New Roman", serif;
+  --f-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141b; --surface:#161d26; --ink:#e7ebf0; --muted:#9aa5b3; --line:#2a3440;
+  --en:#7fa8d4; --pl:#ec6a72; --accent:#ec6a72; --soft:#1c2530;
+  --c-com:#7fa8d4; --c-open:#7b8593; --c-pl:#ec6a72; --good:#5fbf92; --warn:#e0a54a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141b; --surface:#161d26; --ink:#e7ebf0; --muted:#9aa5b3; --line:#2a3440;
+  --en:#7fa8d4; --pl:#ec6a72; --accent:#ec6a72; --soft:#1c2530;
+  --c-com:#7fa8d4; --c-open:#7b8593; --c-pl:#ec6a72; --good:#5fbf92; --warn:#e0a54a; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.6 var(--f-body);margin:0}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+h1,h2{font-family:var(--f-display);font-weight:400;letter-spacing:-.01em;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.05}
+h2{font-size:clamp(1.6rem,3vw,2.1rem);line-height:1.15}
+h3{font-size:1rem;font-weight:600;margin:0}
+p{margin:0;max-width:68ch}
+a{color:var(--en)}
+.eyebrow{font:500 .72rem/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+header{display:grid;gap:14px;padding-block:8px 28px;border-bottom:1px solid var(--line)}
+header .lede{font-size:1.08rem;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:grid;gap:4px;align-content:start}
+.tile .n{font:400 2rem/1.1 var(--f-display);color:var(--accent)}
+.tile .t{font-size:.86rem;color:var(--muted)}
+section{display:grid;gap:14px;padding-block:36px;border-bottom:1px solid var(--line)}
+.sec-head{display:grid;gap:8px}
+.figure{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;display:grid;gap:12px;min-width:0}
+.controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.seg{font:500 .82rem/1 var(--f-body);padding:8px 12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;cursor:pointer}
+.seg[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg:focus-visible,select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+select,input[type=number]{font:400 .9rem var(--f-body);padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.chart-box{position:relative;width:100%;min-width:0}
+.note{font-size:.84rem;color:var(--muted);max-width:none}
+.src{font:400 .76rem/1.5 var(--f-mono);color:var(--muted);overflow-wrap:anywhere}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:7px 9px;text-align:right;font-size:.84rem;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font:500 .72rem/1.2 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.heat td.v{font-family:var(--f-mono);font-size:.8rem}
+.exam{display:grid;gap:10px}
+.exam-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,2fr) 64px;gap:12px;align-items:center}
+.exam-row .lbl{font-size:.84rem;min-width:0}
+.exam-row .lbl small{display:block;color:var(--muted);font-size:.76rem}
+.bar{position:relative;height:16px;background:var(--soft);border-radius:3px}
+.bar span{position:absolute;inset:0 auto 0 0;border-radius:3px}
+.bar .thr{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.exam-row .val{font:500 .86rem var(--f-mono);text-align:right}
+.pass{color:var(--good)} .fail{color:var(--accent)}
+.calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.calc label{display:grid;gap:4px;font-size:.82rem;color:var(--muted)}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.out div{background:var(--soft);border-radius:6px;padding:10px 12px;display:grid;gap:2px}
+.out b{font:400 1.5rem/1.1 var(--f-display)}
+.out small{color:var(--muted);font-size:.78rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:grid;gap:6px;align-content:start}
+.card .tag{font:500 .7rem/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase}
+.tag.myth{color:var(--warn)} .tag.fact{color:var(--good)} .tag.gap{color:var(--muted)}
+.badge{display:inline-block;font:500 .68rem/1 var(--f-mono);padding:3px 6px;border-radius:3px;border:1px solid var(--line);color:var(--muted)}
+.badge.V{color:var(--good);border-color:var(--good)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:s}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:grid;gap:4px}
+.step b{font:500 .74rem var(--f-mono);color:var(--accent)}
+footer{padding-top:24px;display:grid;gap:6px}
+@media (max-width:560px){.exam-row{grid-template-columns:1fr 56px}.exam-row .bar{grid-column:1 / -1;grid-row:2}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow" data-i="eyebrow"></span>
+    <h1 data-i="title"></h1>
+    <p class="lede" data-i="lede"></p>
+    <div class="tiles" id="tiles"></div>
+  </header>
+
+  <section id="gap">
+    <div class="sec-head"><span class="eyebrow">01</span><h2 data-i="gapH"></h2><p data-i="gapP"></p></div>
+    <div class="figure">
+      <div class="controls" id="gapTabs" role="group"></div>
+      <div class="controls" id="gapLangWrap" hidden><label for="gapLang" class="note" data-i="langPick"></label><select id="gapLang"></select></div>
+      <div class="legend" id="gapLegend"></div>
+      <div class="chart-box" id="gapBox"><canvas id="gapChart"></canvas></div>
+      <p class="note" id="gapNote"></p>
+      <p class="src" id="gapSrc"></p>
+    </div>
+  </section>
+
+  <section id="slavic">
+    <div class="sec-head"><span class="eyebrow">02</span><h2 data-i="heatH"></h2><p data-i="heatP"></p></div>
+    <div class="figure">
+      <div class="controls" id="heatMode" role="group"></div>
+      <div class="scroll"><table class="heat" id="heat"></table></div>
+      <p class="src">Belebele — arXiv 2308.16884, Table 7 (ACL 2024)</p>
+    </div>
+  </section>
+
+  <section id="boards">
+    <div class="sec-head"><span class="eyebrow">03</span><h2 data-i="lbH"></h2><p data-i="lbP"></p></div>
+    <div class="figure">
+      <div class="controls" id="lbTabs" role="group"></div>
+      <div class="controls" id="lbFilter"></div>
+      <div class="chart-box" id="lbBox"><canvas id="lbChart"></canvas></div>
+      <p class="note" id="lbNote"></p>
+      <p class="src" id="lbSrc"></p>
+    </div>
+  </section>
+
+  <section id="exams">
+    <div class="sec-head"><span class="eyebrow">04</span><h2 data-i="exH"></h2><p data-i="exP"></p></div>
+    <div class="figure">
+      <div class="legend"><span><i style="background:var(--pl)"></i><span data-i="exPL"></span></span><span><i style="background:var(--en)"></i><span data-i="exEN"></span></span><span><i style="background:var(--ink);width:2px"></i><span data-i="exThr"></span></span></div>
+      <div class="exam" id="exam"></div>
+      <p class="src">Sci Rep 13:20512 (2023); arXiv 2412.00559v2 Tab. 4; Cureus 2024 PMC11366403; Cureus 2025 PMC12102586, PMC12392048, PMC12548761; KiTP 2025;22(3)</p>
+    </div>
+  </section>
+
+  <section id="tokens">
+    <div class="sec-head"><span class="eyebrow">05</span><h2 data-i="tkH"></h2><p data-i="tkP"></p></div>
+    <div class="figure">
+      <div class="calc">
+        <label for="tkIn"><span data-i="tkIn"></span><input type="number" id="tkIn" min="0" step="100000" value="10000000"></label>
+        <label for="tkPrice"><span data-i="tkPrice"></span><input type="number" id="tkPrice" min="0" step="0.1" value="3"></label>
+        <label for="tkLang"><span data-i="tkLang"></span><select id="tkLang"></select></label>
+      </div>
+      <div class="out" id="tkOut"></div>
+      <div class="controls" id="tkTabs" role="group"></div>
+      <div class="chart-box" id="tkBox"><canvas id="tkChart"></canvas></div>
+      <p class="note" id="tkNote"></p>
+      <p class="src" id="tkSrc"></p>
+    </div>
+  </section>
+
+  <section id="myths">
+    <div class="sec-head"><span class="eyebrow">06</span><h2 data-i="mythH"></h2></div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section id="method">
+    <div class="sec-head"><span class="eyebrow">07</span><h2 data-i="mH"></h2><p data-i="mP"></p></div>
+    <div class="steps" id="steps"></div>
+    <div class="figure"><div class="scroll"><table id="srcTable"></table></div></div>
+  </section>
+
+  <footer><p class="note" data-i="foot"></p></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const LANG = "en";
+document.documentElement.lang = LANG;
+const nf = (v, d=1) => new Intl.NumberFormat(LANG, {minimumFractionDigits:d, maximumFractionDigits:d}).format(v);
+const ni = v => new Intl.NumberFormat(LANG, {maximumFractionDigits:0}).format(v);
+
+const T = {
+pl:{
+ eyebrow:"Raport dowodowy · 24.11.2026 · tylko źródła pierwotne",
+ title:"Jak modele językowe radzą sobie z polskim i innymi językami słowiańskimi",
+ lede:"Najmocniejsze modele są po polsku bliskie parytetu z angielskim. Mniejsze i starsze tracą 5–20 punktów, a polski tekst kosztuje około dwa razy więcej tokenów. Poniżej dane z benchmarków, raportów technicznych i badań, każda liczba z linkiem do źródła.",
+ tiles:[["+1,3 pkt","GPT-4o: egzamin LEK po polsku 89,96% vs po angielsku 88,69%"],["−13,0 pkt","GPT-3.5 w Belebele: polski 74,7 vs angielski 87,7"],["81 vs 62","PLCC (polski język i kultura): GPT-4o vs Bielik 2.3"],["1,91×","tyle tokenów GPT-4 potrzeba na polski tekst względem angielskiego"]],
+ gapH:"Te same pytania, dwa języki",
+ gapP:"Porównania na identycznych pytaniach w wersji angielskiej i słowiańskiej. Wybierz zestaw danych.",
+ langPick:"Język:",
+ heatH:"Mapa luk: dziewięć języków słowiańskich",
+ heatP:"Belebele to test czytania ze zrozumieniem z tymi samymi pytaniami w 122 wariantach językowych. Im ciemniejsza komórka, tym większa strata względem angielskiego.",
+ heatScore:"Wynik", heatGap:"Różnica do EN",
+ lbH:"Polskie benchmarki: kto prowadzi",
+ lbP:"Leaderboardy i testy zbudowane dla polskiego. Kolor oznacza typ modelu. Zaznacz, które grupy pokazać.",
+ com:"komercyjny", open:"otwarty", plm:"polski",
+ exH:"Egzaminy lekarskie: LEK i PES",
+ exP:"Wyniki modeli na polskich egzaminach lekarskich na tle progu zdawalności. Pary PL/EN pochodzą z badań, które użyły tych samych pytań w obu językach.",
+ exPL:"wersja polska", exEN:"wersja angielska", exThr:"próg zdania",
+ passed:"zdany", failed:"niezdany",
+ tkH:"Ile kosztuje polski w tokenach",
+ tkP:"Ten sam tekst po polsku zajmuje więcej tokenów, czyli więcej okna kontekstu i więcej pieniędzy w API. Kalkulator używa współczynników zmierzonych dla tokenizera GPT-4 (cl100k) na korpusie FLORES-200.",
+ tkIn:"Tokeny miesięcznie w wersji angielskiej", tkPrice:"Cena za 1 mln tokenów (USD)", tkLang:"Język docelowy",
+ tkOutTok:"tokenów w języku docelowym", tkOutCost:"koszt miesięczny", tkOutExtra:"dopłata względem EN", tkOutCtx:"treści EN mieści się w tym samym oknie",
+ tkSlavic:"Języki słowiańskie (GPT-4)", tkTok:"Polski w różnych tokenizerach", tkTpw:"Tokeny na słowo: preambuła Konstytucji",
+ tkNoteA:"Stosunek liczby tokenów do angielskiego, łącznie na korpusie FLORES-200 (dev + devtest).",
+ tkNoteB:"Polski do angielskiego dla różnych tokenizerów, ten sam korpus. Tokenizery wielojęzyczne (XLM-R, mT5) zmniejszają różnicę.",
+ tkNoteC:"Tokeny na słowo w preambule Konstytucji RP. APT4 to polski tokenizer Bielika v3 (SELF, jeden tekst).",
+ mythH:"Mity, fakty i luki",
+ mH:"Jak powstał ten raport",
+ mP:"Proces był wieloagentowy: koordynator zarządzał zadaniami i sprawdzał jakość, a badanie i weryfikację wykonali agenci Claude Haiku.",
+ steps:[["6 agentów","Rozłączne zakresy: polskie benchmarki, polskie modele, benchmarki wielojęzyczne, inne języki słowiańskie, dokumentacja producentów, źródła po polsku."],["2–3 iteracje","Po każdej rundzie koordynator dawał feedback i wskazywał luki do domknięcia."],["9 języków","Zapytania po polsku, czesku, słowacku, ukraińsku, rosyjsku, słoweńsku, chorwacku, serbsku i bułgarsku."],["3 weryfikatorów","Niezależnie sprawdzili 14 tabel komórka po komórce. Nie znaleźli rozbieżności w wartościach, poprawili 8 opisów."]],
+ srcH:["Źródło","Co mierzy","Status"],
+ foot:"V = potwierdzone przez drugiego, niezależnego agenta; P = odczytane ze źródła pierwotnego przez jednego agenta; SELF = wynik podany przez twórców modelu. Wartości odczytano przez WebFetch ze stron arXiv (wersje HTML), PMC, Hugging Face i GitHub. Pełny raport: docs/research/llm-polish-slavic/report.pl.md.",
+ en:"angielski", gapLbl:"różnica",
+ langs:{EN:"angielski",PL:"polski",CS:"czeski",RU:"rosyjski",UK:"ukraiński",SK:"słowacki",BG:"bułgarski",HR:"chorwacki",SL:"słoweński",SR:"serbski"}
+},
+en:{
+ eyebrow:"Evidence report · 24 Nov 2026 · primary sources only",
+ title:"How language models handle Polish and other Slavic languages",
+ lede:"Frontier models are close to parity in Polish. Smaller and older models lose 5–20 points, and Polish text costs about twice as many tokens. The data below comes from benchmarks, technical reports and studies, each number linked to its source.",
+ tiles:[["+1.3 pp","GPT-4o on the LEK medical exam: 89.96% in Polish vs 88.69% in English"],["−13.0 pp","GPT-3.5 on Belebele: Polish 74.7 vs English 87.7"],["81 vs 62","PLCC (Polish language and culture): GPT-4o vs Bielik 2.3"],["1.91×","GPT-4 tokens needed for Polish text relative to English"]],
+ gapH:"Same questions, two languages",
+ gapP:"Comparisons on identical questions in English and a Slavic language. Pick a dataset.",
+ langPick:"Language:",
+ heatH:"Gap map: nine Slavic languages",
+ heatP:"Belebele is a reading-comprehension test with the same questions in 122 language variants. The darker the cell, the larger the loss compared with English.",
+ heatScore:"Score", heatGap:"Gap to EN",
+ lbH:"Polish benchmarks: who leads",
+ lbP:"Leaderboards and tests built for Polish. Colour shows the model type. Choose which groups to show.",
+ com:"commercial", open:"open", plm:"Polish",
+ exH:"Medical exams: LEK and PES",
+ exP:"Model scores on Polish medical exams against the pass mark. PL/EN pairs come from studies that used the same questions in both languages.",
+ exPL:"Polish version", exEN:"English version", exThr:"pass mark",
+ passed:"passed", failed:"failed",
+ tkH:"What Polish costs in tokens",
+ tkP:"The same text in Polish takes more tokens, so it uses more context window and more API money. The calculator uses ratios measured for the GPT-4 tokenizer (cl100k) on the FLORES-200 corpus.",
+ tkIn:"Monthly tokens for the English version", tkPrice:"Price per 1M tokens (USD)", tkLang:"Target language",
+ tkOutTok:"tokens in the target language", tkOutCost:"monthly cost", tkOutExtra:"extra vs English", tkOutCtx:"of the English content fits in the same window",
+ tkSlavic:"Slavic languages (GPT-4)", tkTok:"Polish across tokenizers", tkTpw:"Tokens per word: Constitution preamble",
+ tkNoteA:"Token count relative to English, totals over FLORES-200 (dev + devtest).",
+ tkNoteB:"Polish to English for different tokenizers on the same corpus. Multilingual tokenizers (XLM-R, mT5) narrow the gap.",
+ tkNoteC:"Tokens per word on the preamble of the Polish Constitution. APT4 is the Polish tokenizer of Bielik v3 (SELF, one text).",
+ mythH:"Myths, facts and gaps",
+ mH:"How this report was made",
+ mP:"The process was multi-agent: a coordinator managed tasks and checked quality, while Claude Haiku agents did the research and verification.",
+ steps:[["6 agents","Separate scopes: Polish benchmarks, Polish models, multilingual benchmarks, other Slavic languages, vendor documentation, Polish-language sources."],["2–3 iterations","After each round the coordinator gave feedback and named the gaps to close."],["9 languages","Searches in Polish, Czech, Slovak, Ukrainian, Russian, Slovenian, Croatian, Serbian and Bulgarian."],["3 verifiers","Independently re-read 14 tables cell by cell. They found no value mismatches and corrected 8 descriptions."]],
+ srcH:["Source","What it measures","Status"],
+ foot:"V = confirmed by a second, independent agent; P = read from the primary source by one agent; SELF = reported by the model's developers. Values were read through WebFetch from arXiv HTML, PMC, Hugging Face and GitHub. Full report: docs/research/llm-polish-slavic/report.en.md.",
+ en:"English", gapLbl:"gap",
+ langs:{EN:"English",PL:"Polish",CS:"Czech",RU:"Russian",UK:"Ukrainian",SK:"Slovak",BG:"Bulgarian",HR:"Croatian",SL:"Slovenian",SR:"Serbian"}
+}}[LANG];
+
+/* ---------- data (all values from primary sources; see report.*.md) ---------- */
+const GAP = {
+ lek:{name:{pl:"LEK (lekarski)",en:"LEK (medical)"}, target:"PL", unit:"%",
+  rows:[["gpt-4o-2024-08-06",89.96,88.69],["Llama-3.1-70B",80.94,82.60],["Qwen2.5-72B",76.87,81.93],["Mistral-Large-2407",76.75,82.40],["gpt-4o-mini",75.88,75.92],["Bielik-11B-v2.2",62.36,56.98],["Qwen2.5-7B",51.92,67.73],["Llama-3.2-3B",39.22,52.08]],
+  note:{pl:"Te same pytania LEK po polsku i po angielsku. GPT-4o i Bielik wypadają lepiej po polsku, a reszta po angielsku. Najmniejsze modele tracą 13–16 pkt.",en:"The same LEK questions in Polish and English. GPT-4o and Bielik do better in Polish; the others do better in English. The smallest models lose 13–16 pp."},
+  src:"arXiv 2412.00559v2, Table 4 · V"},
+ rosol:{name:{pl:"GPT-3.5 → GPT-4",en:"GPT-3.5 → GPT-4"}, target:"PL", unit:"%",
+  rows:[["GPT-4",79.7,79.7],["GPT-3.5",54.8,60.3]],
+  note:{pl:"Ten sam egzamin LEK (2022–2023). Różnica 5,5 pkt u GPT-3.5 znika u GPT-4. Próg zdania 56%, studenci 83–85%.",en:"Same LEK exam (2022–2023). GPT-3.5's 5.5 pp gap disappears with GPT-4. Pass mark 56%, students 83–85%."},
+  src:"Rosoł et al., Sci Rep 13:20512 (2023) · V"},
+ belebele:{name:{pl:"Belebele",en:"Belebele"}, target:"PL", unit:"",
+  rows:[["Llama 2 70B (5-shot)",79.2,90.9],["GPT-3.5-turbo (0-shot)",74.7,87.7],["InfoXLM-L",73.7,81.2],["Llama 1 (5-shot)",67.0,82.5],["Llama-2-chat (0-shot)",61.7,78.8],["Falcon (5-shot)",59.9,77.2]],
+  note:{pl:"Każdy model z 2023 r. ma po polsku wynik o 7,5–17,3 pkt niższy niż po angielsku.",en:"Every 2023-era model scores 7.5–17.3 pp lower in Polish than in English."},
+  src:"arXiv 2308.16884, Table 7 · V (top 3) / P"},
+ bggpt:{name:{pl:"BgGPT (bułgarski)",en:"BgGPT (Bulgarian)"}, target:"BG", unit:"",
+  rows:[["BgGPT-Gemma-2-27B",64.67,75.12],["Llama-3.1-70B",61.49,77.75],["Gemma-2-27B-it",60.51,75.08],["Qwen2.5-72B",58.25,77.53],["Llama-3.1-8B",46.69,67.89],["Qwen2.5-7B",40.20,62.22]],
+  note:{pl:"Średnia z 10 bułgarskich benchmarków wobec ich angielskich wersji. Dotrenowanie na bułgarskim (BgGPT) zmniejsza różnicę do 10 pkt.",en:"Average of 10 Bulgarian benchmarks vs their English versions. Bulgarian continued training (BgGPT) narrows the gap to 10 pp."},
+  src:"arXiv 2412.10893, Table 1 · V"},
+ mmluprox:{name:{pl:"MMLU-ProX",en:"MMLU-ProX"}, target:"RU", unit:"%", multi:true,
+  langs:["CS","SR","UK","RU"],
+  data:{"Qwen3-235B-Think":{EN:80.7,RU:77.0,UK:78.8,SR:80.2,CS:80.5},"DeepSeek-R1":{EN:79.5,RU:76.4,UK:76.8,SR:80.9,CS:76.8},"GPT-4.1":{EN:79.8,RU:71.2,UK:76.4,SR:76.9,CS:77.5},"o4-mini":{EN:73.7,RU:62.0,UK:73.3,SR:72.6,CS:73.5}},
+  note:{pl:"Polskiego nie ma wśród 29 języków MMLU-ProX. Czołowe modele rozumujące tracą po czesku i serbsku poniżej 3 pkt, a po rosyjsku najwięcej. GPT-4o pominięto, bo ma anomalię (RU 62,0 > EN 59,9).",en:"Polish is not among MMLU-ProX's 29 languages. Frontier reasoning models lose under 3 pp in Czech and Serbian, and the most in Russian. GPT-4o is omitted because of an anomaly (RU 62.0 > EN 59.9)."},
+  src:"arXiv 2503.10497v2, Table 3 · V"},
+ eu20:{name:{pl:"EU20-MMLU",en:"EU20-MMLU"}, single:true, unit:"",
+  rows:[["EN",82],["PL",78],["CS",78],["SL",74],["SK",68],["BG",67]],
+  note:{pl:"Jeden model (Llama-3.1-70B-Instruct), MMLU tłumaczone maszynowo przez DeepL. Polski i czeski tracą 4 pkt, bułgarski 15.",en:"One model (Llama-3.1-70B-Instruct), MMLU machine-translated with DeepL. Polish and Czech lose 4 pp, Bulgarian 15."},
+  src:"arXiv 2410.08928v2, Table 1 (accuracy ×100) · V"}
+};
+
+const BELEBELE = {
+ cols:["EN","PL","CS","RU","UK","SK","BG","HR","SL","SR"],
+ rows:[["Llama 2 70B, 5-shot",[90.9,79.2,81.1,82.7,80.8,75.2,80.4,79.8,76.7,81.0]],
+       ["GPT-3.5-turbo, 0-shot",[87.7,74.7,76.9,78.4,72.8,77.3,76.0,78.4,77.4,74.8]],
+       ["Llama 1, 5-shot",[82.5,67.0,70.7,73.1,69.7,60.4,69.3,66.9,65.6,70.7]],
+       ["InfoXLM-L, translate-train",[81.2,73.7,76.2,76.8,74.9,76.7,75.3,75.3,75.4,76.1]],
+       ["Llama-2-chat, 0-shot",[78.8,61.7,65.0,67.0,65.7,58.8,65.0,64.7,62.4,65.1]],
+       ["Falcon, 5-shot",[77.2,59.9,65.0,48.1,41.9,57.0,41.9,48.7,43.7,40.2]],
+       ["XLM-R large, fine-tuned EN",[76.2,67.4,69.9,72.2,71.0,70.2,70.1,69.9,68.6,71.1]]]
+};
+
+const LB = {
+ plcc:{name:"PLCC", max:100,
+  rows:[["Gemini-Exp-1206",83.00,"c"],["Claude-3.5-Sonnet",82.67,"c"],["GPT-4o",81.33,"c"],["Gemini-2.0-Flash",74.17,"c"],["Claude-3-Opus",73.83,"c"],["DeepSeek-V3",69.17,"o"],["GPT-4-turbo",67.00,"c"],["Bielik-2.3 (11B)",62.17,"p"],["Llama-3.1-405B",60.00,"o"],["Mistral-Large-2411",52.00,"o"],["Llama-3.3-70B",48.83,"o"],["Bielik-0.1 (7B)",46.67,"p"],["GPT-3.5-turbo",43.33,"c"],["Qwen-2.5-72B",39.17,"o"],["Llama-3.1-8B",22.67,"o"]],
+  note:{pl:"600 pytań o polską historię, geografię, kulturę, sztukę, gramatykę i słownictwo. Trzy czołowe modele komercyjne mają ok. 81–83%, najlepszy polski model 62%. Nawet GPT-4o ma najsłabszy wynik w gramatyce (67).",en:"600 questions on Polish history, geography, culture, art, grammar and vocabulary. Three frontier commercial models score about 81–83%; the best Polish model 62%. Even GPT-4o scores lowest on grammar (67)."},
+  src:"arXiv 2503.00995, Table 1 (OPI-PIB) · V"},
+ llmzszl:{name:"LLMzSzŁ", max:100,
+  rows:[["Qwen2.5-72B-Instruct",69.06,"o"],["Mistral-Large-2407",67.17,"o"],["Llama-3.3-70B",67.13,"o"],["Llama-3.1-70B",66.59,"o"],["Llama-PLLuM-70B-chat",64.42,"p"],["PLLuM-8x7B-nc-chat",60.52,"p"],["Bielik-11B-v2.6",59.23,"p"],["Bielik-11B-v2.1",57.52,"p"],["trurl-2-13b",40.22,"p"],["Qra-13b",34.85,"p"]],
+  note:{pl:"Około 19 tys. pytań zamkniętych z polskich egzaminów państwowych. Leaderboard obejmuje tylko modele otwarte, bez GPT-4o i Claude.",en:"About 19k closed questions from Polish state exams. The leaderboard covers open-weights models only, without GPT-4o or Claude."},
+  src:"HF amu-cai/LLMZSZL_Leaderboard (llmzszl.json); arXiv 2501.02266 · P"},
+ eq:{name:"Polish EQ-Bench", max:100,
+  rows:[["gpt-4o-2024-08-06",75.15,"c"],["gpt-4-turbo-2024-04-09",74.59,"c"],["Bielik-11B-v3.0",71.20,"p"],["Bielik-PL-11B-v3.0",71.15,"p"],["gpt-4o-mini",71.15,"c"],["Bielik-PL-Minitron-7B",66.89,"p"]],
+  note:{pl:"Inteligencja emocjonalna w dialogu po polsku. Bielik v3 zbliża się do GPT-4o (różnica ok. 4 pkt).",en:"Emotional intelligence in Polish dialogue. Bielik v3 comes within about 4 points of GPT-4o."},
+  src:"arXiv 2604.10799, Table 3 · SELF, P"},
+ puzzles:{name:{pl:"Zagadki logiczne",en:"Logic puzzles"}, max:100,
+  rows:[["Gemini-3-pro",87,"c"],["o3",87,"c"],["gemini-2.5-pro",84,"c"],["qwen3:8b",68,"o"],["bielik-r:11b",56,"p"],["bielik-v3:11b",45,"p"],["bielik-v2.6:11b",45,"p"],["qwen2.5:14b",39,"o"],["bielik-v2.3:11b",29,"p"]],
+  note:{pl:"111 polskich zagadek logicznych. Modele rozumujące wyraźnie prowadzą, a wersja rozumująca Bielika (bielik-r) poprawia wynik o 11 pkt względem v3.",en:"111 Polish logic puzzles. Reasoning models lead clearly; Bielik's reasoning variant (bielik-r) gains 11 points over v3."},
+  src:"arXiv 2603.10640, Table 2 · P"}
+};
+
+const EXAMS = [
+ {l:{pl:"LEK 2022–23 · GPT-4",en:"LEK 2022–23 · GPT-4"}, s:"Sci Rep 2023", pl:79.7, en:79.7, thr:56},
+ {l:{pl:"LEK 2022–23 · GPT-3.5",en:"LEK 2022–23 · GPT-3.5"}, s:"Sci Rep 2023", pl:54.8, en:60.3, thr:56},
+ {l:{pl:"LEK · gpt-4o",en:"LEK · gpt-4o"}, s:"arXiv 2412.00559", pl:89.96, en:88.69, thr:56},
+ {l:{pl:"LEK · Qwen2.5-7B",en:"LEK · Qwen2.5-7B"}, s:"arXiv 2412.00559", pl:51.92, en:67.73, thr:56},
+ {l:{pl:"LEK wiosna 2021 · GPT-4",en:"LEK spring 2021 · GPT-4"}, s:"Cureus 2024 · 196 q.", pl:77.55, thr:56},
+ {l:{pl:"LEK wiosna 2021 · GPT-3.5",en:"LEK spring 2021 · GPT-3.5"}, s:"Cureus 2024 · 196 q.", pl:50.51, thr:56},
+ {l:{pl:"PES choroby zakaźne · DeepSeek-R1",en:"PES infectious diseases · DeepSeek-R1"}, s:"Cureus 2025 · 119 q.", pl:73.95, thr:60.5},
+ {l:{pl:"PES choroby zakaźne · GPT-4o",en:"PES infectious diseases · GPT-4o"}, s:"Cureus 2025 · 119 q.", pl:71.43, thr:60.5},
+ {l:{pl:"PES chirurgia naczyniowa · GPT-4o",en:"PES vascular surgery · GPT-4o"}, s:"Cureus 2025 · 120 q.", pl:73.3, thr:60},
+ {l:{pl:"PES okulistyka · GPT-4o",en:"PES ophthalmology · GPT-4o"}, s:{pl:"Cureus 2025 · próg nie podany",en:"Cureus 2025 · threshold not stated"}, pl:78.3, thr:null},
+ {l:{pl:"PES torakochirurgia · GPT-3.5",en:"PES thoracic surgery · GPT-3.5"}, s:"KiTP 2025 · 120 q.", pl:42.5, thr:60}
+];
+
+const TOK = {
+ slavic:{PL:1.91,HR:1.85,SL:1.88,CS:2.11,SK:2.14,RU:2.49,BG:2.64,SR:2.92,UK:3.00},
+ tokenizers:[["GPT-2 (r50k)",2.69],["cl100k (GPT-4)",1.91],["Qwen",1.76],["LLaMA",1.70],["mT5",1.31],["Glot500",1.23],["XLM-R",1.19]],
+ tpw:[["Bielik 11B v3 (orig.)",3.22,1.28],["Llama 3.2",2.81,1.17],["Qwen3",2.69,1.17],["Gemma 3",2.20,1.20],["EuroLLM",1.88,1.27],["APT4 (PL)",1.62,1.98]]
+};
+
+const CARDS = {
+ pl:[
+  ["myth","„Polski to najlepszy język do promptowania”","OneRuler: polski jest 1. na 26 języków (88%), angielski 6. (83,9%), ale tylko w syntetycznym wyszukiwaniu informacji w długim kontekście. Na testach wiedzy i czytania (Belebele, LEK) polski wypada zwykle gorzej od angielskiego. arXiv 2503.01996"],
+  ["fact","Najmocniejsze modele osiągnęły parytet na egzaminie LEK","GPT-4 ma 79,7% w obu językach, a GPT-4o 89,96% po polsku i 88,69% po angielsku. Duże różnice zostają przy modelach 3–7B."],
+  ["fact","Polskie modele są konkurencyjne w swojej klasie","Bielik-11B ma 65,71 na Open PL LLM Leaderboard, a Qwen2.5-72B 67,92. Na PLCC Bielik 2.3 (62,17) wyprzedza Llama-3.1-405B (60,00)."],
+  ["gap","Producenci modeli pomijają polski","W tabelach OpenAI MMMLU, Anthropic Global-MMLU, Llama 3.1 i MMLU-ProX nie ma polskiego. Global-MMLU zawiera polski tylko w tłumaczeniu maszynowym."],
+  ["gap","Brak badań wprost o języku promptu","Nie znaleziono badania źródłowego porównującego promptowanie po polsku i po angielsku na współczesnych modelach. W badaniu kodu (arXiv 2607.14816) angielski nie zawsze wygrywał, ale polskiego tam nie testowano."],
+  ["gap","Brak niezależnej oceny PLLuM wobec GPT-4o","Jedyne porównanie PLLuM z GPT-4o (RAG-IFEval: 89,7 vs 80,3) wykonali autorzy PLLuM na własnym benchmarku."]],
+ en:[
+  ["myth","“Polish is the best language for prompting”","OneRuler: Polish ranks 1st of 26 (88%), English 6th (83.9%), but only on synthetic long-context retrieval. On knowledge and reading tests (Belebele, LEK) Polish usually trails English. arXiv 2503.01996"],
+  ["fact","Frontier models reached parity on the LEK exam","GPT-4 scores 79.7% in both languages; GPT-4o 89.96% in Polish vs 88.69% in English. Large gaps remain for 3–7B models."],
+  ["fact","Polish models compete in their class","Bielik-11B scores 65.71 on the Open PL LLM Leaderboard, Qwen2.5-72B 67.92. On PLCC, Bielik 2.3 (62.17) beats Llama-3.1-405B (60.00)."],
+  ["gap","Model vendors leave Polish out","OpenAI MMMLU, Anthropic Global-MMLU, Llama 3.1 and MMLU-ProX have no Polish row. Global-MMLU includes Polish only as machine translation."],
+  ["gap","No direct study of prompt language","No primary study compares prompting in Polish and English on current models. In a code study (arXiv 2607.14816) English did not always win, but Polish was not tested."],
+  ["gap","No independent PLLuM vs GPT-4o comparison","The only PLLuM vs GPT-4o comparison (RAG-IFEval: 89.7 vs 80.3) was run by the PLLuM authors on their own benchmark."]]
+}[LANG];
+
+const SOURCES = [
+ ["arXiv 2412.00559","https://arxiv.org/abs/2412.00559",{pl:"LEK/LDEK/PES, wersje PL i EN",en:"LEK/LDEK/PES, PL and EN versions"},"V"],
+ ["Sci Rep 13:20512","https://doi.org/10.1038/s41598-023-46995-z",{pl:"GPT-3.5 i GPT-4 na LEK",en:"GPT-3.5 and GPT-4 on LEK"},"V"],
+ ["arXiv 2308.16884","https://arxiv.org/abs/2308.16884",{pl:"Belebele, 122 warianty językowe",en:"Belebele, 122 language variants"},"V"],
+ ["arXiv 2503.00995","https://arxiv.org/abs/2503.00995",{pl:"PLCC, kompetencje kulturowe",en:"PLCC, cultural competency"},"V"],
+ ["arXiv 2501.02266","https://arxiv.org/abs/2501.02266",{pl:"LLMzSzŁ, polskie egzaminy",en:"LLMzSzŁ, Polish exams"},"P"],
+ ["arXiv 2505.02410","https://arxiv.org/abs/2505.02410",{pl:"Bielik 11B v2, raport techniczny",en:"Bielik 11B v2 technical report"},"V"],
+ ["arXiv 2604.10799","https://arxiv.org/abs/2604.10799",{pl:"Bielik v3: tokenizer APT4, EQ-Bench, CPTUB",en:"Bielik v3: APT4 tokenizer, EQ-Bench, CPTUB"},"V"],
+ ["arXiv 2511.03823","https://arxiv.org/abs/2511.03823",{pl:"PLLuM, raport techniczny",en:"PLLuM technical report"},"P"],
+ ["arXiv 2603.10640","https://arxiv.org/abs/2603.10640",{pl:"Polskie zagadki logiczne",en:"Polish logic puzzles"},"P"],
+ ["arXiv 2503.01996","https://arxiv.org/abs/2503.01996",{pl:"OneRuler, długi kontekst, 26 języków",en:"OneRuler, long context, 26 languages"},"V"],
+ ["arXiv 2503.10497","https://arxiv.org/abs/2503.10497",{pl:"MMLU-ProX, 29 języków",en:"MMLU-ProX, 29 languages"},"V"],
+ ["arXiv 2410.08928","https://arxiv.org/abs/2410.08928",{pl:"EU20-MMLU (DeepL)",en:"EU20-MMLU (DeepL)"},"V"],
+ ["arXiv 2412.10893","https://arxiv.org/abs/2412.10893",{pl:"BgGPT, bułgarski",en:"BgGPT, Bulgarian"},"V"],
+ ["arXiv 2610.09152","https://arxiv.org/abs/2610.09152",{pl:"sk-bench, słowacki",en:"sk-bench, Slovak"},"P"],
+ ["arXiv 2411.14647","https://arxiv.org/abs/2411.14647",{pl:"ZNO-Vision, ukraiński",en:"ZNO-Vision, Ukrainian"},"P"],
+ ["MERA 11642","https://mera.a-ai.ru/en/submits/11642",{pl:"MERA, rosyjski",en:"MERA, Russian"},"P"],
+ ["arXiv 2511.07989","https://arxiv.org/abs/2511.07989",{pl:"Języki południowosłowiańskie, klasyfikacja",en:"South Slavic classification"},"P"],
+ ["arXiv 2508.07860","https://arxiv.org/abs/2508.07860",{pl:"Czeski: prompty CS i EN",en:"Czech: CS vs EN prompts"},"P"],
+ ["Petrov 2023","https://github.com/AleksandarPetrov/tokenization-fairness",{pl:"Koszt tokenizacji, FLORES-200",en:"Tokenization cost, FLORES-200"},"V"],
+ ["PMC11366403","https://pmc.ncbi.nlm.nih.gov/articles/PMC11366403/",{pl:"LEK 2021, Cureus",en:"LEK 2021, Cureus"},"P"],
+ ["PMC12102586","https://pmc.ncbi.nlm.nih.gov/articles/PMC12102586/",{pl:"PES choroby zakaźne",en:"PES infectious diseases"},"P"],
+ ["PMC12548761","https://pmc.ncbi.nlm.nih.gov/articles/PMC12548761/",{pl:"PES chirurgia naczyniowa",en:"PES vascular surgery"},"P"],
+ ["arXiv 2403.10258","https://arxiv.org/abs/2403.10258",{pl:"Tłumaczenie na angielski a wyniki",en:"Translation to English and performance"},"P"],
+ ["OpenAI MMMLU","https://huggingface.co/datasets/openai/MMMLU",{pl:"14 języków, bez polskiego",en:"14 languages, no Polish"},"V"]
+];
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const tx = v => (v && typeof v === "object" && !Array.isArray(v)) ? v[LANG] : v;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function segs(el, items, active, onPick){
+  el.innerHTML = "";
+  items.forEach(([key,label]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "seg"; b.textContent = label;
+    b.setAttribute("aria-pressed", key === active ? "true" : "false");
+    b.addEventListener("click", () => { [...el.children].forEach(c => c.setAttribute("aria-pressed","false")); b.setAttribute("aria-pressed","true"); onPick(key); });
+    el.appendChild(b);
+  });
+}
+function legend(el, items){ el.innerHTML = items.map(([c,l]) => `<span><i style="background:${c}"></i>${l}</span>`).join(""); }
+function baseOpts(axisMax){
+  const ink = css("--muted"), grid = css("--line");
+  return {indexAxis:"y", responsive:true, maintainAspectRatio:false, animation:{duration:300},
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:c => `${c.dataset.label}: ${nf(c.raw, c.raw % 1 ? 2 : 0)}`}}},
+    scales:{x:{min:0,max:axisMax,grid:{color:grid},ticks:{color:ink,font:{family:"IBM Plex Mono",size:11}}},
+            y:{grid:{display:false},ticks:{color:css("--ink"),font:{family:"IBM Plex Sans",size:12}}}}};
+}
+
+/* ---------- static text ---------- */
+document.querySelectorAll("[data-i]").forEach(el => { el.textContent = T[el.dataset.i]; });
+$("tiles").innerHTML = T.tiles.map(([n,t]) => `<div class="tile"><span class="n">${n}</span><span class="t">${t}</span></div>`).join("");
+
+/* ---------- 01 gap explorer ---------- */
+let gapChart, gapKey = "lek", gapLang = "RU";
+const gapSel = $("gapLang");
+GAP.mmluprox.langs.forEach(l => { const o = document.createElement("option"); o.value = l; o.textContent = T.langs[l]; gapSel.appendChild(o); });
+gapSel.value = gapLang;
+gapSel.addEventListener("change", () => { gapLang = gapSel.value; drawGap(); });
+function drawGap(){
+  const d = GAP[gapKey];
+  $("gapLangWrap").hidden = !d.multi;
+  let labels, a, b, nameA, nameB, h;
+  if (d.single){
+    labels = d.rows.map(r => T.langs[r[0]]); a = d.rows.map(r => r[1]);
+    legend($("gapLegend"), [[css("--en"),T.langs.EN],[css("--pl"),LANG==="pl"?"języki słowiańskie":"Slavic languages"]]);
+  } else if (d.multi){
+    const m = Object.keys(d.data); labels = m;
+    a = m.map(k => d.data[k][gapLang]); b = m.map(k => d.data[k].EN);
+    nameA = T.langs[gapLang]; nameB = T.en;
+    legend($("gapLegend"), [[css("--pl"),nameA],[css("--en"),nameB]]);
+  } else {
+    labels = d.rows.map(r => r[0]); a = d.rows.map(r => r[1]); b = d.rows.map(r => r[2]);
+    nameA = T.langs[d.target]; nameB = T.en;
+    legend($("gapLegend"), [[css("--pl"),nameA],[css("--en"),nameB]]);
+  }
+  const datasets = d.single
+    ? [{label:"", data:a, backgroundColor:d.rows.map(r => r[0]==="EN" ? css("--en") : css("--pl")), borderRadius:2, barThickness:18}]
+    : [{label:nameA, data:a, backgroundColor:css("--pl"), borderRadius:2, barThickness:12},
+       {label:nameB, data:b, backgroundColor:css("--en"), borderRadius:2, barThickness:12}];
+  h = Math.max(220, labels.length * (d.single ? 34 : 40) + 50);
+  $("gapBox").style.height = h + "px";
+  if (gapChart) gapChart.destroy();
+  const opts = baseOpts(100);
+  if (!d.single) opts.plugins.tooltip.callbacks.afterBody = items => { const i = items[0].dataIndex; return `${T.gapLbl}: ${nf(a[i]-b[i],2)} pp`; };
+  gapChart = new Chart($("gapChart"), {type:"bar", data:{labels, datasets}, options:opts});
+  $("gapNote").textContent = tx(d.note); $("gapSrc").textContent = d.src;
+}
+segs($("gapTabs"), Object.entries(GAP).map(([k,v]) => [k, tx(v.name)]), gapKey, k => { gapKey = k; drawGap(); });
+
+/* ---------- 02 heatmap ---------- */
+let heatMode = "gap";
+function drawHeat(){
+  const cols = BELEBELE.cols;
+  const acc = css("--pl"), en = css("--en");
+  let html = `<thead><tr><th>Model</th>${cols.map(c => `<th title="${T.langs[c]}">${c}</th>`).join("")}</tr></thead><tbody>`;
+  BELEBELE.rows.forEach(([m, v]) => {
+    html += `<tr><td>${m}</td>`;
+    v.forEach((x, i) => {
+      const g = x - v[0];
+      let bg = "transparent", shown;
+      if (i === 0){ bg = `color-mix(in srgb, ${en} 22%, transparent)`; shown = nf(x); }
+      else { const k = Math.min(1, Math.abs(g) / 40); bg = `color-mix(in srgb, ${acc} ${Math.round(8 + k*72)}%, transparent)`; shown = heatMode === "gap" ? nf(g) : nf(x); }
+      html += `<td class="v" style="background:${bg}" title="${T.langs[cols[i]]}: ${nf(x)} (${nf(g)} pp)">${shown}</td>`;
+    });
+    html += "</tr>";
+  });
+  $("heat").innerHTML = html + "</tbody>";
+}
+segs($("heatMode"), [["gap",T.heatGap],["score",T.heatScore]], heatMode, k => { heatMode = k; drawHeat(); });
+
+/* ---------- 03 leaderboards ---------- */
+let lbChart, lbKey = "plcc"; const lbShow = {c:true,o:true,p:true};
+const typeColor = t => css({c:"--c-com",o:"--c-open",p:"--c-pl"}[t]);
+function drawLB(){
+  const d = LB[lbKey];
+  const rows = d.rows.filter(r => lbShow[r[2]]);
+  $("lbBox").style.height = Math.max(200, rows.length * 30 + 50) + "px";
+  if (lbChart) lbChart.destroy();
+  lbChart = new Chart($("lbChart"), {type:"bar",
+    data:{labels:rows.map(r => r[0]), datasets:[{label:tx(d.name), data:rows.map(r => r[1]), backgroundColor:rows.map(r => typeColor(r[2])), borderRadius:2, barThickness:16}]},
+    options:baseOpts(d.max)});
+  $("lbNote").textContent = tx(d.note); $("lbSrc").textContent = d.src;
+}
+function drawLBFilter(){
+  const el = $("lbFilter"); el.innerHTML = "";
+  [["c",T.com],["o",T.open],["p",T.plm]].forEach(([k,l]) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "seg";
+    b.innerHTML = `<i style="display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;background:${typeColor(k)}"></i>${l}`;
+    b.setAttribute("aria-pressed", lbShow[k] ? "true" : "false");
+    b.addEventListener("click", () => { lbShow[k] = !lbShow[k]; if (!Object.values(lbShow).some(Boolean)) lbShow[k] = true; drawLBFilter(); drawLB(); });
+    el.appendChild(b);
+  });
+}
+segs($("lbTabs"), Object.entries(LB).map(([k,v]) => [k, tx(v.name)]), lbKey, k => { lbKey = k; drawLB(); });
+
+/* ---------- 04 exams ---------- */
+function drawExams(){
+  $("exam").innerHTML = EXAMS.map(e => {
+    const ok = e.thr == null ? null : e.pl >= e.thr;
+    const status = ok == null ? "" : `<span class="${ok ? "pass" : "fail"}">${ok ? T.passed : T.failed}</span>`;
+    const enBar = e.en != null ? `<span style="width:${e.en}%;background:var(--en);opacity:.55;top:9px"></span>` : "";
+    return `<div class="exam-row"><div class="lbl">${tx(e.l)}<small>${tx(e.s)}${status ? " · " + status : ""}</small></div>
+      <div class="bar"><span style="width:${e.pl}%;background:var(--pl);${e.en != null ? "bottom:8px" : ""}"></span>${enBar}${e.thr != null ? `<i class="thr" style="left:${e.thr}%"></i>` : ""}</div>
+      <div class="val">${nf(e.pl)}${e.en != null ? `<br><span style="color:var(--en)">${nf(e.en)}</span>` : ""}</div></div>`;
+  }).join("");
+}
+
+/* ---------- 05 tokens ---------- */
+const tkSel = $("tkLang");
+Object.keys(TOK.slavic).forEach(l => { const o = document.createElement("option"); o.value = l; o.textContent = `${T.langs[l]} (${nf(TOK.slavic[l],2)}×)`; tkSel.appendChild(o); });
+tkSel.value = "PL";
+function calc(){
+  const n = Math.max(0, +$("tkIn").value || 0), p = Math.max(0, +$("tkPrice").value || 0), r = TOK.slavic[tkSel.value];
+  const enCost = n / 1e6 * p, tCost = n * r / 1e6 * p;
+  const usd = v => new Intl.NumberFormat(LANG, {style:"currency", currency:"USD", maximumFractionDigits:2}).format(v);
+  $("tkOut").innerHTML = `<div><small>${T.tkOutTok}</small><b>${ni(n*r)}</b></div>
+    <div><small>${T.tkOutCost}</small><b>${usd(tCost)}</b><small>EN: ${usd(enCost)}</small></div>
+    <div><small>${T.tkOutExtra}</small><b style="color:var(--accent)">+${usd(tCost-enCost)}</b></div>
+    <div><small>${T.tkOutCtx}</small><b>${nf(100/r,0)}%</b></div>`;
+}
+["tkIn","tkPrice"].forEach(id => $(id).addEventListener("input", calc));
+tkSel.addEventListener("change", () => { calc(); if (tkKey === "slavic") drawTok(); });
+let tkChart, tkKey = "slavic";
+function drawTok(){
+  let labels, datasets, max;
+  if (tkKey === "slavic"){
+    const e = Object.entries(TOK.slavic).sort((x,y) => x[1]-y[1]);
+    labels = e.map(([k]) => T.langs[k]);
+    datasets = [{label:"× EN", data:e.map(([,v]) => v), backgroundColor:e.map(([k]) => k === tkSel.value ? css("--pl") : css("--c-open")), borderRadius:2, barThickness:16}];
+    max = 3.2; $("tkNote").textContent = T.tkNoteA; $("tkSrc").textContent = "Petrov et al. 2023 (NeurIPS) · tokenization_lengths_validated.csv · V";
+  } else if (tkKey === "tok"){
+    labels = TOK.tokenizers.map(r => r[0]);
+    datasets = [{label:"PL/EN", data:TOK.tokenizers.map(r => r[1]), backgroundColor:css("--pl"), borderRadius:2, barThickness:16}];
+    max = 3; $("tkNote").textContent = T.tkNoteB; $("tkSrc").textContent = "Petrov et al. 2023 · FLORES-200 · V";
+  } else {
+    labels = TOK.tpw.map(r => r[0]);
+    datasets = [{label:T.langs.PL, data:TOK.tpw.map(r => r[1]), backgroundColor:css("--pl"), borderRadius:2, barThickness:12},
+                {label:T.langs.EN, data:TOK.tpw.map(r => r[2]), backgroundColor:css("--en"), borderRadius:2, barThickness:12}];
+    max = 3.5; $("tkNote").textContent = T.tkNoteC; $("tkSrc").textContent = "arXiv 2604.10799, Table 1 · SELF, V";
+  }
+  $("tkBox").style.height = Math.max(220, labels.length * (tkKey === "tpw" ? 40 : 30) + 50) + "px";
+  if (tkChart) tkChart.destroy();
+  const o = baseOpts(max); o.plugins.tooltip.callbacks.label = c => `${c.dataset.label}: ${nf(c.raw,2)}`;
+  tkChart = new Chart($("tkChart"), {type:"bar", data:{labels, datasets}, options:o});
+}
+segs($("tkTabs"), [["slavic",T.tkSlavic],["tok",T.tkTok],["tpw",T.tkTpw]], tkKey, k => { tkKey = k; drawTok(); });
+
+/* ---------- 06 cards, 07 method ---------- */
+const tagLbl = {myth:LANG==="pl"?"Mit":"Myth", fact:LANG==="pl"?"Fakt":"Fact", gap:LANG==="pl"?"Luka":"Gap"};
+$("cards").innerHTML = CARDS.map(([t,h,b]) => `<div class="card"><span class="tag ${t}">${tagLbl[t]}</span><h3>${h}</h3><p class="note">${b}</p></div>`).join("");
+$("steps").innerHTML = T.steps.map(([h,b]) => `<div class="step"><b>${h}</b><p class="note">${b}</p></div>`).join("");
+$("srcTable").innerHTML = `<thead><tr>${T.srcH.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>` +
+  SOURCES.map(([id,u,w,s]) => `<tr><td><a href="${u}" target="_blank" rel="noopener">${id}</a></td><td style="text-align:left;white-space:normal">${tx(w)}</td><td><span class="badge ${s}">${s}</span></td></tr>`).join("") + "</tbody>";
+
+/* ---------- render + theme sync ---------- */
+function renderAll(){ drawGap(); drawHeat(); drawLBFilter(); drawLB(); drawExams(); drawTok(); calc(); }
+if (window.Chart){ Chart.defaults.font.family = "IBM Plex Sans"; renderAll(); }
+else { drawHeat(); drawExams(); calc(); }
+const rerender = () => { if (window.Chart) renderAll(); };
+try { document.fonts.ready.then(rerender); } catch(e) {}
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rerender); } catch(e) {}
+new MutationObserver(rerender).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+</script>
