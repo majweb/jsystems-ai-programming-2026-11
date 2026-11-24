@@ -9,9 +9,14 @@ build/
 !.env.example
 secrets
 .DS_Store
-# Project skills in .agents/skills/ and skills-lock.json are committed: skills built
-# in class must reach the repository. .claude/skills/ holds the CLI's links to them.
-.claude/skills/
+# Installed agent skills are not committed: skills-lock.json (committed) is the source
+# of truth for which skills are used and at which commit, so reinstall from it.
+# Skills written in this repository are not in the lock file and are kept as exceptions.
+# .claude/skills/ holds the CLI's links to .agents/skills/.
+.agents/skills/*
+!.agents/skills/verified-research
+.claude/skills/*
+!.claude/skills/verified-research
 __pycache__/
 *.pyc
 .playwright-cli
